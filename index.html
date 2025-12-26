@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Focus Garden</title>
+    <script type="importmap">
+    {
+      "imports": {
+        "lucide": "https://esm.sh/lucide"
+      }
+    }
+    </script>
+    <link rel="stylesheet" href="style.css">
+    <script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./service-worker.js");
+    });
+  }
+</script>
+</head>
+<body>
+    <div id="app">
+        <!-- Main Background -->
+        <div class="background-overlay"></div>
+
+        <!-- Header Info -->
+        <header class="app-header">
+            <div class="stat-badge" title="Racha">
+                <span class="icon">🔥</span>
+                <span id="streak-count">0</span>
+            </div>
+            <div class="stat-badge" title="Plantas">
+                <span class="icon">🌱</span>
+                <span id="plant-count">0</span>/20
+            </div>
+            <div class="stat-badge currency" title="Horas Totales">
+                <span class="icon">⏳</span>
+                <span id="total-hours">0.0</span>h
+            </div>
+            <div class="header-actions">
+                <div id="trophy-case" class="trophy-case">
+                    <!-- Trophies appear here -->
+                </div>
+                <button id="theme-toggle" class="theme-btn">
+                    <i data-lucide="moon"></i>
+                </button>
+                <button id="lang-toggle" class="theme-btn" title="Language">
+                    <span id="lang-code">EN</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Deep Focus Overlay -->
+        <div id="deep-focus-overlay" class="deep-focus-overlay">
+            <button id="exit-deep-focus" class="exit-deep-btn"></button>
+        </div>
+
+        <!-- Main Content Screens -->
+        <main id="content">
+            <!-- Focus Timer Screen -->
+            <section id="timer-screen" class="screen active">
+                <div id="active-task-display" class="active-task-display hidden">
+                    <span class="task-label">Tarea Actual:</span>
+                    <h4 id="active-task-name">Nombre de la Tarea</h4>
+                    <div id="active-task-timer" class="task-timer">00:00</div>
+                </div>
+                <div id="focus-tips-container" class="focus-tips-container">
+                    <i data-lucide="lightbulb" class="tip-icon"></i>
+                    <p id="focus-tip-text">Puedes activar el Enfoque Profundo para concentrarte más en tu tarea</p>
+                </div>
+                <div class="timer-display">
+                    <h2 id="timer-text">00:00:00</h2>
+                    <p><span id="today-label">Hoy</span>: <span id="daily-progress">0.0</span> / 3h</p>
+                    <div class="progress-bar-container">
+                        <div id="daily-progress-bar" class="progress-bar"></div>
+                    </div>
+                </div>
+                <div class="timer-controls">
+                    <button id="focus-btn" class="primary-btn">Start Focus</button>
+                    <div class="deep-focus-toggle-container">
+                        <label class="switch">
+                            <input type="checkbox" id="deep-focus-checkbox">
+                            <span class="slider round"></span>
+                        </label>
+                        <span id="deep-focus-label">Enfoque Profundo</span>
+                    </div>
+                </div>
+                <p class="hint-text" id="hint-text">Deja la aplicación abierta para cultivar tu jardín.</p>
+            </section>
+
+            <!-- To-Do List Screen -->
+            <section id="todo-screen" class="screen">
+                <div class="todo-header">
+                    <h3 id="todo-title">Mis Objetivos</h3>
+                    <button id="add-todo-btn" class="add-btn">+</button>
+                </div>
+                <div id="todo-list" class="todo-list">
+                    <!-- To-Dos injected here -->
+                </div>
+                
+                <div id="todo-modal" class="modal">
+                    <div class="modal-content">
+                        <h4 id="modal-title">Nuevo Objetivo</h4>
+                        <input type="text" id="todo-input" placeholder="¿Qué hay que hacer?">
+                        <input type="text" id="todo-timeframe" placeholder="Plazo (ej. Para el viernes)">
+                        <div class="input-group">
+                            <label for="todo-duration" id="duration-label">Duración (minutos):</label>
+                            <input type="number" id="todo-duration" placeholder="ej. 25" min="1" value="25">
+                        </div>
+                        <div class="modal-actions">
+                            <button id="cancel-todo">Cancel</button>
+                            <button id="save-todo" class="primary-btn">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Garden Screen -->
+            <section id="garden-screen" class="screen">
+                <div id="garden-grid" class="garden-grid">
+                    <!-- Plants will be injected here -->
+                </div>
+            </section>
+
+            <!-- Shop/Rewards Screen -->
+            <section id="shop-screen" class="screen">
+                <div class="shop-content">
+                    <h3 id="shop-title">Vivero de Plantas</h3>
+                    <p class="shop-desc" id="shop-desc">Gasta tus horas ganadas para cultivar tu jardín.</p>
+                    
+                    <div id="shop-items-container">
+                        <!-- Shop items injected by JS -->
+                    </div>
+
+                    <hr>
+
+                    <h3>Recompensas</h3>
+                    <p class="shop-desc">Colecciona 20 plantas para desbloquear descuentos exclusivos.</p>
+                    <div id="rewards-list" class="rewards-list">
+                        <!-- Rewards show here -->
+                        <div class="reward-locked">
+                            <span class="lock-icon">🔒</span>
+                            <p>Desbloquear con 20 Plantas</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-btn active" data-screen="timer-screen">
+                <i data-lucide="timer"></i>
+                <span id="nav-focus">Focus</span>
+            </button>
+            <button class="nav-btn" data-screen="garden-screen">
+                <i data-lucide="flower-2"></i>
+                <span id="nav-garden">Garden</span>
+            </button>
+            <button class="nav-btn" data-screen="todo-screen">
+                <i data-lucide="list-checks"></i>
+                <span id="nav-todos">To-Dos</span>
+            </button>
+            <button class="nav-btn" data-screen="shop-screen">
+                <i data-lucide="shopping-cart"></i>
+                <span id="nav-shop">Shop</span>
+            </button>
+        </nav>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>
