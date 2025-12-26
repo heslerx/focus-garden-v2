@@ -714,3 +714,16 @@ hr {
         grid-template-columns: repeat(3, 1fr);
     }
 }
+
+.bottom-nav {
+    position: fixed;       /* que quede fija */
+    bottom: env(safe-area-inset-bottom); /* respeta notch/márgenes de móviles */
+    left: 0;
+    width: 100%;
+    height: 60px;          /* suficiente para ver botones */
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background-color: #0f172a;
+    z-index: 1000;         /* encima de todo */
+}
