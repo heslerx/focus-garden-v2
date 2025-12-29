@@ -1,4 +1,4 @@
-const CACHE_NAME = "focus-garden-v1";
+const CACHE_NAME = "focus-garden-v2";
 
 const ASSETS = [
   "./",
