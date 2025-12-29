@@ -636,6 +636,23 @@ input:checked + .slider:before {
     cursor: not-allowed;
 }
 
+.dev-btn {
+    background: #607d8b;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 10px;
+    transition: background 0.2s;
+}
+
+.dev-btn:hover {
+    background: #455a64;
+}
+
 .reward-locked {
     padding: 30px;
     text-align: center;
@@ -660,10 +677,41 @@ input:checked + .slider:before {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 10px;
+}
+
+.dark-mode .reward-card {
+    background: #3e331a;
+    border-color: #6d5c2a;
 }
 
 .reward-card h4 {
     color: #f57f17;
+}
+
+.dark-mode .reward-card h4 {
+    color: #ffd54f;
+}
+
+.reward-card p {
+    font-size: 0.85rem;
+    margin: 4px 0;
+}
+
+.claim-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.claim-btn:active {
+    transform: scale(0.95);
 }
 
 /* Navigation */
@@ -713,17 +761,4 @@ hr {
     .garden-grid {
         grid-template-columns: repeat(3, 1fr);
     }
-}
-
-.bottom-nav {
-    position: fixed;       /* que quede fija */
-    bottom: env(safe-area-inset-bottom); /* respeta notch/márgenes de móviles */
-    left: 0;
-    width: 100%;
-    height: 60px;          /* suficiente para ver botones */
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    background-color: #0f172a;
-    z-index: 1000;         /* encima de todo */
 }

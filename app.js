@@ -46,7 +46,8 @@ const UI = {
     navBtns: document.querySelectorAll('.nav-btn'),
     screens: document.querySelectorAll('.screen'),
     themeToggle: document.getElementById('theme-toggle'),
-    exitDeepFocusBtn: document.getElementById('exit-deep-focus')
+    exitDeepFocusBtn: document.getElementById('exit-deep-focus'),
+    secretDevBtn: document.getElementById('secret-dev-btn')
 };
 
 const CONFIG = {
@@ -96,6 +97,10 @@ const I18N = {
         buy: "Buy",
         remaining: "left.",
         today_label: "Today",
+        dev_btn: "Add Progress (+)",
+        dev_prompt_hours: "How many hours to add?",
+        dev_prompt_streak: "How many streak days to add?",
+        dev_tools_title: "Developer Tools",
         // placeholders/examples for the todo modal inputs
         todo_input_placeholder: "e.g. Write proposal",
         todo_timeframe_placeholder: "e.g. Due Fri",
@@ -129,9 +134,13 @@ const I18N = {
             todos: "To-Dos",
             shop: "Shop"
         },
-        buy: "Buy",
+        buy: "Comprar",
         remaining: "rest.",
         today_label: "Hoy",
+        dev_btn: "Añadir Progreso (+)",
+        dev_prompt_hours: "¿Cuántas horas quieres añadir?",
+        dev_prompt_streak: "¿Cuántos días de racha quieres añadir?",
+        dev_tools_title: "Herramientas de Desarrollador",
         // placeholders/examples for the todo modal inputs (Spanish)
         todo_input_placeholder: "ej. Escribir propuesta",
         todo_timeframe_placeholder: "ej. Para el viernes",
@@ -188,10 +197,18 @@ function loadData() {
     if (saved) {
         state = { ...state, ...JSON.parse(saved) };
     }
+    // Ensure devUnlocked defaults to false if not present
+    if (typeof state.devUnlocked === 'undefined') state.devUnlocked = false;
+
     checkDailyReset();
     applyTheme();
     applyLanguage();
     updateUI();
+
+    // Show or hide developer button based on persisted unlock
+    if (UI.secretDevBtn) {
+        UI.secretDevBtn.style.display = state.devUnlocked ? '' : 'none';
+    }
 }
 
 function saveData() {
@@ -377,51 +394,101 @@ function renderGarden() {
 }
 
 function renderRewards() {
+    UI.rewardsList.innerHTML = '';
     const plantCounts = state.plants.reduce((acc, p) => {
         acc[p.type] = (acc[p.type] || 0) + 1;
         return acc;
     }, {});
 
-    const has20Of = (type) => plantCounts[type] >= 20;
-
-    let rewardHTML = '';
+    const L = I18N[state.lang] || I18N.es;
     const isGardenFull = state.plants.length >= CONFIG.MAX_PLANTS_FOR_REWARDS;
 
     if (!isGardenFull) {
-        rewardHTML = `
-            <div class="reward-locked">
-                <span class="lock-icon">🔒</span>
-                <p>Desbloquea más con 20 Plantas (${state.plants.length}/20)</p>
-            </div>
-        `;
+        const locked = document.createElement('div');
+        locked.className = 'reward-locked';
+        const msg = state.lang === 'es' ? 
+            `Canjea 20 plantas por descuentos (${state.plants.length}/20)` : 
+            `Exchange 20 plants for discounts (${state.plants.length}/20)`;
+        locked.innerHTML = `<span class="lock-icon">🔒</span><p>${msg}</p>`;
+        UI.rewardsList.appendChild(locked);
     } else {
-        // Base Rewards
-        rewardHTML += `
-            <div class="reward-card">
-                <div><h4>Recompensa Base: 10% Descuento</h4><p>Código: GARDEN10</p></div>
-                <span>🎟️</span>
-            </div>
-        `;
-
-        // Specific Pure Garden Rewards
-        if (has20Of('orchid')) {
-            rewardHTML += `<div class="reward-card" style="border-color: #ba68c8;"><div><h4>Maestría de Orquídeas: 20-40% Desc.</h4><p>Código: ORCHID40</p></div><span>🌸</span></div>`;
-        }
-        if (has20Of('rose')) {
-            rewardHTML += `<div class="reward-card" style="border-color: #ef5350;"><div><h4>Maestría de Rosas: 25-40% Desc.</h4><p>Código: ROSE40</p></div><span>🌹</span></div>`;
-        }
-        if (has20Of('sunflower')) {
-            rewardHTML += `<div class="reward-card" style="border-color: #fbc02d;"><div><h4>Maestría de Girasoles: 30-45% Desc.</h4><p>Código: SUN45</p></div><span>🌻</span></div>`;
-        }
-        if (has20Of('tulip')) {
-            rewardHTML += `<div class="reward-card" style="border-color: #ec407a;"><div><h4>Maestría de Tulipanes: 35-50% Desc.</h4><p>Código: TULIP50</p></div><span>🌷</span></div>`;
-        }
-        if (has20Of('aloe')) {
-            rewardHTML += `<div class="reward-card" style="border-color: #66bb6a;"><div><h4>Maestría de Aloe: 40-60% Desc.</h4><p>Código: ALOE60</p></div><span>🌵</span></div>`;
-        }
+        // Base Reward
+        addRewardCard('base', 'GARDEN10', state.lang === 'es' ? '10% Descuento (Cualquier Planta)' : '10% Off (Any Plant)', '🎟️');
     }
+
+    // Specific Mastery Rewards
+    const masteryTypes = [
+        { id: 'orchid', code: 'ORCHID40', name: state.lang === 'es' ? 'Maestría de Orquídeas' : 'Orchid Mastery', color: '#ba68c8', icon: '🌸' },
+        { id: 'rose', code: 'ROSE40', name: state.lang === 'es' ? 'Maestría de Rosas' : 'Rose Mastery', color: '#ef5350', icon: '🌹' },
+        { id: 'sunflower', code: 'SUN45', name: state.lang === 'es' ? 'Maestría de Girasoles' : 'Sunflower Mastery', color: '#fbc02d', icon: '🌻' },
+        { id: 'tulip', code: 'TULIP50', name: state.lang === 'es' ? 'Maestría de Tulipanes' : 'Tulip Mastery', color: '#ec407a', icon: '🌷' },
+        { id: 'aloe', code: 'ALOE60', name: state.lang === 'es' ? 'Maestría de Aloe' : 'Aloe Mastery', color: '#66bb6a', icon: '🌵' }
+    ];
+
+    masteryTypes.forEach(t => {
+        if (plantCounts[t.id] >= 20) {
+            addRewardCard(t.id, t.code, t.name, t.icon, t.color);
+        }
+    });
+
+    if (UI.rewardsList.children.length === 0) {
+        UI.rewardsList.innerHTML = '<p class="hint-text">No hay recompensas activas. ¡Cultiva más plantas específicas!</p>';
+    }
+}
+
+function addRewardCard(type, code, title, icon, borderColor = null) {
+    const card = document.createElement('div');
+    card.className = 'reward-card';
+    if (borderColor) card.style.borderColor = borderColor;
+
+    const label = state.lang === 'es' ? 'Canjear y Copiar' : 'Claim & Copy';
+
+    card.innerHTML = `
+        <div style="flex: 1">
+            <h4>${title}</h4>
+            <p>Code: <strong>${code}</strong></p>
+        </div>
+        <button class="claim-btn">${label}</button>
+        <span style="font-size: 1.5rem">${icon}</span>
+    `;
+
+    card.querySelector('.claim-btn').onclick = () => claimReward(type, code);
+    UI.rewardsList.appendChild(card);
+}
+
+async function claimReward(type, code) {
+    const confirmMsg = state.lang === 'es' ? 
+        `¿Confirmas canjear 20 plantas por este código? Se copiará al portapapeles.` : 
+        `Confirm exchanging 20 plants for this code? It will be copied to clipboard.`;
     
-    UI.rewardsList.innerHTML = rewardHTML || '<p class="hint-text">No hay recompensas activas. ¡Cultiva más plantas específicas!</p>';
+    if (!confirm(confirmMsg)) return;
+
+    // Remove plants
+    if (type === 'base') {
+        // Remove 20 oldest plants
+        state.plants.splice(0, 20);
+    } else {
+        // Remove 20 of specific type
+        let count = 0;
+        state.plants = state.plants.filter(p => {
+            if (p.type === type && count < 20) {
+                count++;
+                return false;
+            }
+            return true;
+        });
+    }
+
+    // Copy to clipboard
+    try {
+        await navigator.clipboard.writeText(code);
+        alert(state.lang === 'es' ? '¡Código copiado y plantas canjeadas!' : 'Code copied and plants exchanged!');
+    } catch (err) {
+        alert(state.lang === 'es' ? 'Plantas canjeadas (Error al copiar código)' : 'Plants exchanged (Error copying code)');
+    }
+
+    saveData();
+    updateUI();
 }
 
 function renderShop() {
@@ -609,6 +676,11 @@ function applyLanguage() {
     document.getElementById('nav-shop').textContent = L.nav.shop;
     document.getElementById('lang-code').textContent = state.lang.toUpperCase();
 
+    const devBtn = document.getElementById('secret-dev-btn');
+    if (devBtn) devBtn.textContent = L.dev_btn;
+    const devTitle = document.getElementById('dev-tools-title');
+    if (devTitle) devTitle.textContent = L.dev_tools_title;
+
     // update the "today" label under the timer
     const todayLabelEl = document.getElementById('today-label');
     if (todayLabelEl) todayLabelEl.textContent = L.today_label || todayLabelEl.textContent;
@@ -717,6 +789,104 @@ UI.exitDeepFocusBtn.addEventListener('click', () => {
     UI.deepFocusOverlay.classList.remove('active');
     saveData();
 });
+
+/*
+  Developer unlock mechanism:
+  - Hidden by default (controlled in loadData)
+  - Requires this exact sequence: double-tap streak, then double-tap time, then double-tap plants
+  - A "double-tap" means two taps within 500ms on the same element
+  - Once unlocked, state.devUnlocked is persisted
+*/
+
+// Helper: recognize a double-tap on an element
+function makeDoubleTapDetector(el, cb) {
+    let lastTap = 0;
+    el.addEventListener('click', () => {
+        const now = Date.now();
+        if (now - lastTap <= 500) {
+            cb(); // double-tap detected
+            lastTap = 0;
+        } else {
+            lastTap = now;
+        }
+    });
+}
+
+// Unlock sequence state: 0 = waiting for streak double-tap, 1 = waiting for time, 2 = waiting for plants
+let _devSeqState = 0;
+function resetDevSequence() {
+    _devSeqState = 0;
+}
+function advanceDevSequence(part) {
+    _devSeqState = part;
+    // small timeout to reset sequence after a short inactivity window
+    if (window._devSeqResetTimer) clearTimeout(window._devSeqResetTimer);
+    window._devSeqResetTimer = setTimeout(resetDevSequence, 4000);
+}
+
+// Wire up detectors on the three top badges
+const streakEl = UI.streakCount;
+const timeEl = UI.totalHours;
+const plantsEl = UI.plantCount;
+
+if (streakEl && timeEl && plantsEl) {
+    makeDoubleTapDetector(streakEl, () => {
+        // Only accept this if sequence at position 0
+        if (_devSeqState === 0) {
+            advanceDevSequence(1); // now expect time double-tap
+            // subtle feedback
+            streakEl.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.08)' }, { transform: 'scale(1)' }], { duration: 220 });
+        } else {
+            resetDevSequence();
+        }
+    });
+
+    makeDoubleTapDetector(timeEl, () => {
+        if (_devSeqState === 1) {
+            advanceDevSequence(2); // now expect plants double-tap
+            timeEl.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.08)' }, { transform: 'scale(1)' }], { duration: 220 });
+        } else {
+            resetDevSequence();
+        }
+    });
+
+    makeDoubleTapDetector(plantsEl, () => {
+        if (_devSeqState === 2) {
+            // success: unlock dev button
+            state.devUnlocked = true;
+            if (UI.secretDevBtn) UI.secretDevBtn.style.display = '';
+            saveData();
+            // feedback: small pulse
+            document.body.animate([{ filter: 'brightness(1)' }, { filter: 'brightness(1.06)' }, { filter: 'brightness(1)' }], { duration: 300 });
+            alert(state.lang === 'es' ? 'Herramientas de desarrollador desbloqueadas' : 'Developer tools unlocked');
+            resetDevSequence();
+        } else {
+            resetDevSequence();
+        }
+    });
+}
+
+// Developer button behavior remains the same but will only be reachable when visible
+if (UI.secretDevBtn) {
+    UI.secretDevBtn.addEventListener('click', () => {
+        const L = I18N[state.lang] || I18N.es;
+        const hoursToAdd = prompt(L.dev_prompt_hours, "5");
+        if (hoursToAdd !== null) {
+            const h = parseFloat(hoursToAdd) || 0;
+            state.totalHours += h;
+            state.dailyHours += h;
+        }
+
+        const streakToAdd = prompt(L.dev_prompt_streak, "1");
+        if (streakToAdd !== null) {
+            const s = parseInt(streakToAdd) || 0;
+            state.streak += s;
+        }
+
+        saveData();
+        updateUI();
+    });
+}
 
  // Start app
 showRandomTip();

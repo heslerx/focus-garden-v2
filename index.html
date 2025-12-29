@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0f172a">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Focus Garden</title>
@@ -14,13 +12,6 @@
     }
     </script>
     <link rel="stylesheet" href="style.css">
-    <script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js");
-    });
-  }
-</script>
 </head>
 <body>
     <div id="app">
@@ -147,6 +138,10 @@
                             <p>Desbloquear con 20 Plantas</p>
                         </div>
                     </div>
+
+                    <hr>
+                    <h3 id="dev-tools-title">Herramientas de Desarrollador</h3>
+                    <button id="secret-dev-btn" class="dev-btn">Añadir Progreso (+)</button>
                 </div>
             </section>
         </main>
