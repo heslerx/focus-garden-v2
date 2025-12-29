@@ -47,7 +47,9 @@ const UI = {
     screens: document.querySelectorAll('.screen'),
     themeToggle: document.getElementById('theme-toggle'),
     exitDeepFocusBtn: document.getElementById('exit-deep-focus'),
-    secretDevBtn: document.getElementById('secret-dev-btn')
+    secretDevBtn: document.getElementById('secret-dev-btn'),
+    removeDevBtn: document.getElementById('remove-dev-btn'),
+    resetProgressBtn: document.getElementById('reset-progress-btn')
 };
 
 const CONFIG = {
@@ -114,7 +116,10 @@ const I18N = {
             "Collect 20 of the same species to unlock special discounts.",
             "Deep Focus milestones (10, 50, 100h) grant trophies.",
             "Try Dark Mode in the top-right for a calmer look."
-        ]
+        ],
+        // developer button labels
+        remove_dev_btn: "Remove Dev Options",
+        reset_progress_btn: "Reset Progress"
     },
     es: {
         start_focus: "Start Focus",
@@ -154,7 +159,10 @@ const I18N = {
             "Colecciona 20 de la misma especie para desbloquear descuentos especiales.",
             "Los hitos de Enfoque Profundo (10, 50, 100h) te otorgan trofeos brillantes.",
             "Prueba el Modo Oscuro arriba a la derecha para una experiencia más relajante."
-        ]
+        ],
+        // developer button labels (Spanish)
+        remove_dev_btn: "Remover Opciones Dev",
+        reset_progress_btn: "Resetear Progreso"
     }
 };
 
@@ -208,6 +216,13 @@ function loadData() {
     // Show or hide developer button based on persisted unlock
     if (UI.secretDevBtn) {
         UI.secretDevBtn.style.display = state.devUnlocked ? '' : 'none';
+    }
+    if (UI.removeDevBtn) {
+        UI.removeDevBtn.style.display = state.devUnlocked ? '' : 'none';
+    }
+    // reset-progress button always visible (could be hidden if you prefer)
+    if (UI.resetProgressBtn) {
+        UI.resetProgressBtn.style.display = '';
     }
 }
 
@@ -437,6 +452,10 @@ function renderRewards() {
 }
 
 function addRewardCard(type, code, title, icon, borderColor = null) {
+    // Generate a short randomized code suffix so codes differ each time the card is shown
+    const suffix = Math.random().toString(36).slice(2, 8).toUpperCase();
+    const displayCode = `${code}-${suffix}`;
+
     const card = document.createElement('div');
     card.className = 'reward-card';
     if (borderColor) card.style.borderColor = borderColor;
@@ -446,13 +465,14 @@ function addRewardCard(type, code, title, icon, borderColor = null) {
     card.innerHTML = `
         <div style="flex: 1">
             <h4>${title}</h4>
-            <p>Code: <strong>${code}</strong></p>
+            <p>Code: <strong>${displayCode}</strong></p>
         </div>
         <button class="claim-btn">${label}</button>
         <span style="font-size: 1.5rem">${icon}</span>
     `;
 
-    card.querySelector('.claim-btn').onclick = () => claimReward(type, code);
+    // Use the generated displayCode when claiming/copying
+    card.querySelector('.claim-btn').onclick = () => claimReward(type, displayCode);
     UI.rewardsList.appendChild(card);
 }
 
@@ -678,6 +698,10 @@ function applyLanguage() {
 
     const devBtn = document.getElementById('secret-dev-btn');
     if (devBtn) devBtn.textContent = L.dev_btn;
+    const removeDevBtn = document.getElementById('remove-dev-btn');
+    if (removeDevBtn) removeDevBtn.textContent = L.remove_dev_btn || (state.lang === 'es' ? 'Remover Opciones Dev' : 'Remove Dev Options');
+    const resetProgressBtn = document.getElementById('reset-progress-btn');
+    if (resetProgressBtn) resetProgressBtn.textContent = L.reset_progress_btn || (state.lang === 'es' ? 'Resetear Progreso' : 'Reset Progress');
     const devTitle = document.getElementById('dev-tools-title');
     if (devTitle) devTitle.textContent = L.dev_tools_title;
 
@@ -855,6 +879,8 @@ if (streakEl && timeEl && plantsEl) {
             // success: unlock dev button
             state.devUnlocked = true;
             if (UI.secretDevBtn) UI.secretDevBtn.style.display = '';
+            // Also ensure the remove-dev button becomes visible when dev options are unlocked
+            if (UI.removeDevBtn) UI.removeDevBtn.style.display = '';
             saveData();
             // feedback: small pulse
             document.body.animate([{ filter: 'brightness(1)' }, { filter: 'brightness(1.06)' }, { filter: 'brightness(1)' }], { duration: 300 });
@@ -885,6 +911,45 @@ if (UI.secretDevBtn) {
 
         saveData();
         updateUI();
+    });
+}
+
+// Remove Dev Options button: actually remove/hide the dev controls and persist the change
+if (UI.removeDevBtn) {
+    UI.removeDevBtn.addEventListener('click', () => {
+        // Hide the secret dev button and this remove button
+        if (UI.secretDevBtn) UI.secretDevBtn.style.display = 'none';
+        UI.removeDevBtn.style.display = 'none';
+
+        // Clear unlocked flag so it doesn't reappear after reload
+        state.devUnlocked = false;
+        saveData();
+
+        alert(state.lang === 'es' ? 'Opciones de desarrollador removidas' : 'Developer options removed');
+    });
+}
+
+// Reset Progress button: reset today's hours, total hours, plants and streaks
+if (UI.resetProgressBtn) {
+    UI.resetProgressBtn.addEventListener('click', () => {
+        const confirmMsg = state.lang === 'es' ?
+            '¿Confirmas resetear las horas del día, las horas totales, las plantas, las notas y la racha?' :
+            'Confirm reset today hours, total hours, plants, notes and streak?';
+        if (!confirm(confirmMsg)) return;
+
+        // Reset relevant state fields
+        state.dailyHours = 0;
+        state.totalHours = 0;
+        state.plants = [];
+        state.todos = []; // remove created notes / todos
+        state.streak = 0;
+
+        // Persist and refresh UI
+        saveData();
+        updateUI();
+
+        const doneMsg = state.lang === 'es' ? 'Progreso reseteado.' : 'Progress reset.';
+        alert(doneMsg);
     });
 }
 
